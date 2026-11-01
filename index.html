@@ -543,6 +543,14 @@
       .cert-pdf-wrap { max-height: 55vh; }
       .cert-modal-actions .cert-upload-label { width: 100%; justify-content: center; }
     }
+
+    /* ── All text white (only the section labels like "03 / Expertise" stay grey) ── */
+    :root { --gray: #ffffff; --white: #ffffff; }
+    .section-label { color: #888888 !important; }
+    .hero-intro, .project-desc, .exp-bullets li, .tech-stack-badge span, .edu-desc, .edu-year,
+    .achieve-desc, .cert-year, .skill-tag, .contact-email, footer, footer span, .nav-links a,
+    .hero-role, .stat-label, .exp-date, .exp-company { color: #ffffff !important; }
+    #about p[style*="color:rgba(240,240,240"] { color: #ffffff !important; }
   </style>
 </head>
 <body>
