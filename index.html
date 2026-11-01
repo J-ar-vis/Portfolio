@@ -6,6 +6,7 @@
   <title>Raju Kumar Thakur — Portfolio</title>
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@300;400;500&family=Syne:wght@400;700;800&display=swap" rel="stylesheet"/>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 
   <style>
     /* ============================================================
@@ -22,22 +23,7 @@
 
     *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
     html { scroll-behavior: smooth; }
-    body { background-color: var(--black); color: var(--white); font-family: 'DM Mono', monospace; overflow-x: hidden; cursor: none; }
-
-    /* ── Custom Cursor ── */
-    #cursor {
-      position: fixed; top: 0; left: 0; width: 20px; height: 20px;
-      background: white; border-radius: 50%; pointer-events: none;
-      z-index: 9999; transform: translate(-50%, -50%);
-      transition: transform 0.1s, width 0.2s, height 0.2s;
-      mix-blend-mode: difference;
-    }
-    #cursor-trail {
-      position: fixed; top: 0; left: 0; width: 40px; height: 40px;
-      border: 1px solid rgba(255,255,255,0.4); border-radius: 50%;
-      pointer-events: none; z-index: 9998; transform: translate(-50%, -50%);
-      transition: left 0.15s ease, top 0.15s ease;
-    }
+    body { background-color: var(--black); color: var(--white); font-family: 'DM Mono', monospace; overflow-x: hidden; }
 
     /* ── 3D Canvas Background ── */
     #three-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; opacity: 0.5; }
@@ -104,7 +90,7 @@
     .btn-primary {
       padding: 14px 40px; background: white; color: black; border: none;
       font-family: 'DM Mono', monospace; font-size: 12px; letter-spacing: 3px;
-      text-transform: uppercase; cursor: none; text-decoration: none;
+      text-transform: uppercase; cursor: pointer; text-decoration: none;
       transition: transform 0.3s, box-shadow 0.3s; display: inline-block;
     }
     .btn-primary:hover { transform: translateY(-3px); box-shadow: 0 10px 40px rgba(255,255,255,0.2); }
@@ -113,7 +99,7 @@
       padding: 14px 40px; background: transparent; color: white;
       border: 1px solid rgba(255,255,255,0.3); font-family: 'DM Mono', monospace;
       font-size: 12px; letter-spacing: 3px; text-transform: uppercase;
-      cursor: none; text-decoration: none;
+      cursor: pointer; text-decoration: none;
       transition: border-color 0.3s, transform 0.3s; display: inline-block;
     }
     .btn-secondary:hover { border-color: white; transform: translateY(-3px); }
@@ -161,7 +147,7 @@
 
     /* ── Projects ── */
     .projects-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(340px,1fr)); gap:2px; }
-    .project-card { border:1px solid var(--border); padding:40px; background:var(--card-bg); position:relative; overflow:hidden; transition:transform 0.4s,background 0.4s; cursor:none; }
+    .project-card { border:1px solid var(--border); padding:40px; background:var(--card-bg); position:relative; overflow:hidden; transition:transform 0.4s,background 0.4s; cursor:auto; }
     .project-card::after { content:''; position:absolute; bottom:0; left:0; width:100%; height:3px; background:linear-gradient(90deg,transparent,white,transparent); transform:translateX(-100%); transition:transform 0.6s; }
     .project-card:hover::after { transform:translateX(100%); }
     .project-card:hover { transform:translateY(-6px); background:rgba(255,255,255,0.05); }
@@ -255,6 +241,36 @@
     .cert-upload-label:hover { border-color:white; }
     .cert-upload-input { display:none; }
 
+    /* ── Safety: never scroll sideways ── */
+    html, body { max-width: 100%; overflow-x: hidden; }
+    img, canvas { max-width: 100%; }
+    #about div[style*="justify-content:space-between"] { flex-wrap: wrap; gap: 6px 16px; }
+    #about div[style*="justify-content:space-between"] span:last-child { text-align: right; }
+
+    /* ── Hero auto-changing text ── */
+    .hero-rotator-wrap { margin-top: 22px; min-height: 46px; max-width: 100%; }
+    .hero-rotator {
+      display: inline-flex; align-items: center; max-width: 100%;
+      padding: 10px 22px; background: rgba(255,255,255,0.86); color: #080808;
+      font-size: 13px; letter-spacing: 1px; line-height: 1.4;
+      box-shadow: 0 0 40px rgba(255,255,255,0.12);
+    }
+    #rotator-text { display: block; transition: opacity 0.35s ease, transform 0.35s ease; }
+    #rotator-text.out { opacity: 0; transform: translateY(6px); }
+    @media (prefers-reduced-motion: reduce) { #rotator-text { transition: none; } }
+
+    /* ── Certificate pop-up (PDF preview) ── */
+    .cert-modal-box { max-height: 94vh; overflow-y: auto; display: flex; flex-direction: column; }
+    .cert-modal-close { top: 8px; right: 8px; }
+    .cert-pdf-wrap { position: relative; width: 100%; min-height: 240px; max-height: 62vh; overflow-y: auto; overflow-x: hidden; background: #1a1a1a; }
+    .cert-pdf-wrap canvas { display: block; width: 100%; height: auto; }
+    .cert-pdf-status { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; padding: 20px; text-align: center; color: var(--gray); font-size: 12px; letter-spacing: 2px; text-transform: uppercase; line-height: 1.8; }
+    .cert-modal-nav { display: flex; align-items: center; justify-content: center; gap: 16px; margin-top: 16px; }
+    .cert-nav-btn { width: 40px; height: 40px; background: transparent; color: white; border: 1px solid rgba(255,255,255,0.3); font-size: 20px; line-height: 1; cursor: pointer; transition: border-color 0.3s; }
+    .cert-nav-btn:hover { border-color: white; }
+    .cert-nav-count { font-size: 11px; letter-spacing: 2px; color: var(--gray); min-width: 56px; text-align: center; }
+    .cert-item:focus-visible, .cert-nav-btn:focus-visible, .cert-modal-close:focus-visible { outline: 1px solid white; outline-offset: 2px; }
+
     /* ── Footer ── */
     footer { position:relative; z-index:1; text-align:center; padding:30px; border-top:1px solid var(--border); font-size:11px; letter-spacing:2px; color:rgba(255,255,255,0.2); text-transform:uppercase; }
 
@@ -346,7 +362,6 @@
     @media (max-width: 768px) {
       /* Disable custom cursor on touch devices */
       body { cursor: auto; }
-      #cursor, #cursor-trail { display: none; }
 
       /* Navigation — hamburger style */
       nav { padding: 14px 20px; }
@@ -506,13 +521,33 @@
       #hero { gap: 80px; }
       .photo-frame { width: 420px; height: 520px; }
     }
+
+    /* ── Menu switches to hamburger on tablets and phones (8 links need the room) ── */
+    @media (max-width: 1100px) {
+      .nav-links { display: none; }
+      .hamburger { display: flex !important; flex-direction: column; gap: 5px; cursor: pointer; padding: 8px; }
+      .hamburger span { display: block; width: 24px; height: 2px; background: white; }
+      .nav-links.open {
+        display: flex !important; flex-direction: column;
+        position: absolute; top: 100%; left: 0; width: 100%;
+        background: rgba(8,8,8,0.97); backdrop-filter: blur(20px);
+        padding: 24px 20px; gap: 20px; border-bottom: 1px solid var(--border);
+        max-height: calc(100vh - 70px); overflow-y: auto;
+      }
+      .nav-links.open a { font-size: 14px; letter-spacing: 3px; }
+    }
+    @media (max-width: 768px) {
+      .hero-rotator-wrap { min-height: 64px; }
+      .hero-rotator { font-size: 12px; padding: 9px 16px; }
+      .cert-modal-box { padding: 14px; }
+      .cert-pdf-wrap { max-height: 55vh; }
+      .cert-modal-actions .cert-upload-label { width: 100%; justify-content: center; }
+    }
   </style>
 </head>
 <body>
 
   <div class="noise"></div>
-  <div id="cursor"></div>
-  <div id="cursor-trail"></div>
   <canvas id="three-canvas"></canvas>
 
   <!-- ── NAVIGATION ── -->
@@ -548,6 +583,11 @@
 
         <!-- ★ YOUR ROLE -->
         <p class="hero-role">Data &amp; Business Analyst | Strategy · Operations · Growth<br>Upskilling in DevOps, Cloud &amp; AI Enthusiast</p>
+
+        <!-- Auto-changing roles & skills -->
+        <div class="hero-rotator-wrap">
+          <div class="hero-rotator" aria-live="polite"><span id="rotator-text">Business Analyst – Growth</span></div>
+        </div>
 
         <!-- ★ YOUR INTRO -->
         <p class="hero-intro">
@@ -617,16 +657,17 @@
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:60px;align-items:start;">
         <div>
           <p style="font-size:15px;line-height:2;color:rgba(240,240,240,0.65);margin-bottom:24px;">
-            I'm a B.Tech Automotive Engineering graduate from Delhi Technological University (DTU)
+            I'm a B.Tech Mechanical Engineering graduate from Delhi Technological University (DTU)
             with a Minor in Computer Science. I bridge the gap between engineering thinking and
             business intelligence — turning raw data into strategic decisions.
           </p>
           <p style="font-size:15px;line-height:2;color:rgba(240,240,240,0.65);margin-bottom:24px;">
-            With hands-on experience across D2C analytics, product management, business strategy,
-            and operations, I've worked with companies like Mamaearth, IBM, and Ezinore — delivering
-            real, measurable impact through data.
+            Most recently, I worked as a Business Analyst – Growth at Handpickd, where I built 100+ SQL
+            queries and dashboards, automated customer-support reporting with Python, ran A/B tests across
+            acquisition channels, and authored the PRD for a promoter app rolled out to 150+ promoters in 3 cities.
+            Before that, I worked in D2C analytics at Mamaearth and in analytics and product roles at IBM, Ezinore and Bramer.
           </p>
-          <p style="font-size:15px;line-height:2;color:rgba(240,240,240,0.65);">
+          <p style="font-size:15px;line-height:2;color:rgba(240,240,240,0.65);margin-bottom:0;">
             I believe great decisions are built on clean data, clear thinking, and the courage
             to act. Currently expanding into DevOps, Cloud, and AI to stay ahead of the curve.
           </p>
@@ -640,8 +681,12 @@
               <span style="font-size:12px;">New Delhi, India</span>
             </div>
             <div style="display:flex;justify-content:space-between;border-bottom:1px solid var(--border);padding-bottom:16px;">
+              <span style="font-size:12px;color:var(--gray);">Latest Role</span>
+              <span style="font-size:12px;">Business Analyst – Growth, Handpickd</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;border-bottom:1px solid var(--border);padding-bottom:16px;">
               <span style="font-size:12px;color:var(--gray);">Degree</span>
-              <span style="font-size:12px;">B.Tech Automotive Eng. | Minor: CS</span>
+              <span style="font-size:12px;">B.Tech Mechanical Eng. | Minor: CS</span>
             </div>
             <div style="display:flex;justify-content:space-between;border-bottom:1px solid var(--border);padding-bottom:16px;">
               <span style="font-size:12px;color:var(--gray);">University</span>
@@ -656,7 +701,7 @@
               <span style="font-size:12px;">Hindi, English</span>
             </div>
           </div>
-          <a href="https://drive.google.com/file/d/16glBLhlI90SFWX9hAKSw2KGogxaW0vjt/view?usp=sharing" class="btn-primary" style="display:block;text-align:center;margin-top:30px;" target="_blank">Download CV</a>
+          <a href="https://drive.google.com/file/d/1dZKbUwxmLJaI__kko0VbXJ2RpXPdO7dQ/view?usp=sharing" class="btn-primary" style="display:block;text-align:center;margin-top:30px;" target="_blank">Download CV</a>
         </div>
       </div>
     </section>
@@ -683,6 +728,10 @@
             <span class="skill-tag">EDA</span>
             <span class="skill-tag">Data Cleaning</span>
             <span class="skill-tag">Data Validation</span>
+            <span class="skill-tag">ETL</span>
+            <span class="skill-tag">REST API Integration</span>
+            <span class="skill-tag">Dashboard Automation</span>
+            <span class="skill-tag">Matplotlib</span>
           </div>
         </div>
 
@@ -697,6 +746,13 @@
             <span class="skill-tag">PostgreSQL</span>
             <span class="skill-tag">Jupyter Notebook</span>
             <span class="skill-tag">BigQuery</span>
+            <span class="skill-tag">Metabase</span>
+            <span class="skill-tag">DBeaver</span>
+            <span class="skill-tag">DAX</span>
+            <span class="skill-tag">CleverTap</span>
+            <span class="skill-tag">Freshchat</span>
+            <span class="skill-tag">Meta Ads Manager</span>
+            <span class="skill-tag">Google Ads Manager</span>
           </div>
         </div>
 
@@ -711,6 +767,13 @@
             <span class="skill-tag">Customer Behaviour</span>
             <span class="skill-tag">CAC &amp; ROAS</span>
             <span class="skill-tag">KPI Tracking</span>
+            <span class="skill-tag">A/B Testing</span>
+            <span class="skill-tag">Cohort Analysis</span>
+            <span class="skill-tag">CAC Analysis</span>
+            <span class="skill-tag">User Segmentation</span>
+            <span class="skill-tag">Data Reconciliation</span>
+            <span class="skill-tag">Root Cause Analysis</span>
+            <span class="skill-tag">Data Visualization</span>
           </div>
         </div>
 
@@ -723,6 +786,9 @@
             <span class="skill-tag">Process Improvement</span>
             <span class="skill-tag">Business Strategy</span>
             <span class="skill-tag">Operations</span>
+            <span class="skill-tag">PRD</span>
+            <span class="skill-tag">UAT</span>
+            <span class="skill-tag">Requirements Gathering</span>
           </div>
         </div>
 
@@ -941,20 +1007,6 @@
         The placeholder cards below will push down automatically.
         -->
 
-        <!-- PLACEHOLDER — Replace with your next project -->
-        <div class="project-card placeholder">
-          <div class="project-type">Coming Soon</div>
-          <div class="project-title">Your Next Project</div>
-          <p class="project-desc">Copy any project card above and paste here to add a new project.</p>
-        </div>
-
-        <!-- PLACEHOLDER — Replace with your next project -->
-        <div class="project-card placeholder">
-          <div class="project-type">Coming Soon</div>
-          <div class="project-title">Your Next Project</div>
-          <p class="project-desc">Copy any project card above and paste here to add a new project.</p>
-        </div>
-
       </div>
     </section>
 
@@ -967,6 +1019,25 @@
       <h2>WORK &amp;<br>INTERNSHIPS</h2>
 
       <div class="timeline">
+
+        <!-- Handpickd -->
+        <div class="timeline-item">
+          <div class="timeline-dot"></div>
+          <div class="exp-header">
+            <div class="exp-role">Business Analyst – Growth</div>
+            <div class="exp-date">Apr 2026 – Oct 2026</div>
+          </div>
+          <div class="exp-company">Handpickd · Gurgaon</div>
+          <ul class="exp-bullets">
+            <li>Built 100+ production SQL queries in DBeaver and Metabase powering business trackers, agency reports, live analysis and automated WoW/MoM dashboards, improving reporting efficiency by about 60%.</li>
+            <li>Automated customer-support reporting with a Python and API pipeline into Google Sheets, cutting each cycle from 30–40 minutes to a one-click refresh (about 90% time saved) and tracking FRT, ART, CSAT, FCR and ticket ageing by agent, city and SKU.</li>
+            <li>Ran A/B tests on targeting strategies in 3 acquisition channels (calling, digital, offline), analyzing conversion and campaign metrics to refine targeting and ROI.</li>
+            <li>Engineered CAC and cohort analytics over 3 funnel stages (Registration, Top-up, Paid Customer), covering funnel drop-offs, retention, offer usage and discount-code utilization.</li>
+            <li>Authored the PRD for the promoter app and supported UAT and rollout for 150+ promoters across 3 cities, defining the journey from activity to paid customer.</li>
+            <li>Established promoter-level performance and CAC tracking and user-segmentation frameworks, shifting evaluation from agency to individual economics and improving acquisition planning by nearly 30%.</li>
+          </ul>
+          <div class="tech-stack-badge">Tech Stack: <span>SQL · DBeaver · Metabase · Python · REST APIs · Google Sheets · CleverTap · Freshchat</span></div>
+        </div>
 
         <!-- INTERNSHIP 1 — Mamaearth -->
         <div class="timeline-item">
@@ -1156,7 +1227,23 @@
           </p>
         </div>
 
-        <!--
+                <div class="achieve-card">
+          <span class="achieve-icon">🚀</span>
+          <div class="achieve-title">Corporate Head — E-Cell, DTU</div>
+          <p class="achieve-desc">
+            Served as Corporate Head of E-Cell at Delhi Technological University.
+          </p>
+        </div>
+
+        <div class="achieve-card">
+          <span class="achieve-icon">📱</span>
+          <div class="achieve-title">Promoter App PRD — 150+ Promoters, 3 Cities</div>
+          <p class="achieve-desc">
+            Authored the PRD and supported UAT and rollout at Handpickd, and built promoter-level CAC tracking that improved acquisition planning by nearly 30%.
+          </p>
+        </div>
+
+<!--
         ★★★ ADD MORE ACHIEVEMENTS HERE ★★★
         Copy one .achieve-card block and paste below.
         -->
@@ -1172,19 +1259,20 @@
     <section id="certifications" class="reveal">
       <div class="section-label">08 / Certifications</div>
       <h2>CERTIFIED<br>SKILLS</h2>
+      <p style="font-size:12px;letter-spacing:1px;color:var(--gray);margin:-30px 0 24px;">Click any certificate to preview it.</p>
 
       <div class="cert-list">
 
-        <div class="cert-item" data-name="Google Data Analytics Professional Certificate" data-issuer="Google (Coursera)" data-year="Jun 2025">
+        <div class="cert-item" data-name="Google Data Analytics Professional Certificate" data-file="Coursera Google Data Analytics Certificaton.pdf" data-issuer="Google (Coursera)" data-year="Jun 2025">
           <div>
             <div class="cert-name">Google Data Analytics Professional Certificate</div>
-            <div class="cert-issuer">Google (Coursera)</div>
+            <div class="cert-issuer">Google (Coursera) · 97.22% average across nine modules</div>
           </div>
           <div class="cert-year">Jun 2025</div>
           <div class="cert-badge">Verified ✓</div>
         </div>
 
-        <div class="cert-item" data-name="Oracle Cloud Infrastructure 2025 Certified Foundations Associate" data-issuer="Oracle" data-year="Oct 2025">
+        <div class="cert-item" data-name="Oracle Cloud Infrastructure 2025 Certified Foundations Associate" data-file=" Oracle Cloud Infrastructure 2025 Certified Foundations Associate.pdf" data-issuer="Oracle" data-year="Oct 2025">
           <div>
             <div class="cert-name">Oracle Cloud Infrastructure 2025 Certified Foundations Associate</div>
             <div class="cert-issuer">Oracle</div>
@@ -1193,7 +1281,7 @@
           <div class="cert-badge">Verified ✓</div>
         </div>
 
-        <div class="cert-item" data-name="Oracle Cloud Infrastructure 2025 Certified DevOps Professional" data-issuer="Oracle" data-year="Oct 2025">
+        <div class="cert-item" data-name="Oracle Cloud Infrastructure 2025 Certified DevOps Professional" data-file="Oracle Cloud Infrastructure 2025 Certified DevOps Professional Certification.pdf" data-issuer="Oracle" data-year="Oct 2025">
           <div>
             <div class="cert-name">Oracle Cloud Infrastructure 2025 Certified DevOps Professional</div>
             <div class="cert-issuer">Oracle</div>
@@ -1202,7 +1290,7 @@
           <div class="cert-badge">Verified ✓</div>
         </div>
 
-        <div class="cert-item" data-name="Google Analytics Certification" data-issuer="Google" data-year="Apr 2025">
+        <div class="cert-item" data-name="Google Analytics Certification" data-file="Google Analytics Certification.pdf" data-issuer="Google" data-year="Apr 2025">
           <div>
             <div class="cert-name">Google Analytics Certification</div>
             <div class="cert-issuer">Google</div>
@@ -1211,7 +1299,7 @@
           <div class="cert-badge">Verified ✓</div>
         </div>
 
-        <div class="cert-item" data-name="AI/ML Internship Certificate" data-issuer="IBM SkillsBuild + AICTE" data-year="Jul 2025">
+        <div class="cert-item" data-name="AI/ML Internship Certificate" data-file="IBM SkillsBuild Edunet-Artificial Intelligence Certigfication.pdf" data-issuer="IBM SkillsBuild + AICTE" data-year="Jul 2025">
           <div>
             <div class="cert-name">AI/ML Internship Certificate</div>
             <div class="cert-issuer">IBM SkillsBuild + AICTE</div>
@@ -1220,7 +1308,7 @@
           <div class="cert-badge">Verified ✓</div>
         </div>
 
-        <div class="cert-item" data-name="Introduction to SQL for BigQuery and Cloud SQL" data-issuer="Google Cloud" data-year="May 2025">
+        <div class="cert-item" data-name="Introduction to SQL for BigQuery and Cloud SQL" data-file="Introduction to SQL for BigQuery and Cloud SQL.pdf" data-issuer="Google Cloud" data-year="May 2025">
           <div>
             <div class="cert-name">Introduction to SQL for BigQuery and Cloud SQL</div>
             <div class="cert-issuer">Google Cloud</div>
@@ -1229,16 +1317,16 @@
           <div class="cert-badge">Verified ✓</div>
         </div>
 
-        <div class="cert-item" data-name="Microsoft Azure SQL" data-issuer="Microsoft" data-year="Jun 2025">
+        <div class="cert-item" data-name="Microsoft Azure SQL" data-file="Microsoft Azure SQL Coursera 81OL3AP4NP81.pdf" data-issuer="Microsoft" data-year="Jun 2025">
           <div>
             <div class="cert-name">Microsoft Azure SQL</div>
-            <div class="cert-issuer">Microsoft</div>
+            <div class="cert-issuer">Microsoft · 90% grade</div>
           </div>
           <div class="cert-year">Jun 2025</div>
           <div class="cert-badge">Verified ✓</div>
         </div>
 
-        <div class="cert-item" data-name="Modern Data Warehouse Analytics in Microsoft Azure" data-issuer="Microsoft" data-year="Jun 2025">
+        <div class="cert-item" data-name="Modern Data Warehouse Analytics in Microsoft Azure" data-file="Modern Data Warehouse Analytics in Microsoft Azure Coursera K82OZCFAI40J.pdf" data-issuer="Microsoft" data-year="Jun 2025">
           <div>
             <div class="cert-name">Modern Data Warehouse Analytics in Microsoft Azure</div>
             <div class="cert-issuer">Microsoft</div>
@@ -1247,7 +1335,7 @@
           <div class="cert-badge">Verified ✓</div>
         </div>
 
-        <div class="cert-item" data-name="EA Product Management Job Simulation" data-issuer="Electronic Arts (EA)" data-year="Jun 2025">
+        <div class="cert-item" data-name="EA Product Management Job Simulation" data-file="Product Management Job Simulation.pdf" data-issuer="Electronic Arts (EA)" data-year="Jun 2025">
           <div>
             <div class="cert-name">EA Product Management Job Simulation</div>
             <div class="cert-issuer">Electronic Arts (EA)</div>
@@ -1256,7 +1344,7 @@
           <div class="cert-badge">Verified ✓</div>
         </div>
 
-        <div class="cert-item" data-name="TATA Product Management Job Simulation" data-issuer="TATA Group" data-year="Nov 2024">
+        <div class="cert-item" data-name="TATA Product Management Job Simulation" data-file="TATA certificate.pdf" data-issuer="TATA Group" data-year="Nov 2024">
           <div>
             <div class="cert-name">TATA Product Management Job Simulation</div>
             <div class="cert-issuer">TATA Group</div>
@@ -1265,7 +1353,23 @@
           <div class="cert-badge">Verified ✓</div>
         </div>
 
-        <!--
+                <div class="cert-item" data-name="Getting Started with Data Analytics on AWS" data-issuer="AWS" data-year="" data-file="Getting Started with Data Analytics on AWS.pdf">
+          <div>
+            <div class="cert-name">Getting Started with Data Analytics on AWS</div>
+            <div class="cert-issuer">AWS</div>
+          </div>
+          <div class="cert-badge">Verified ✓</div>
+        </div>
+
+        <div class="cert-item" data-name="Google IT Support" data-issuer="Google" data-year="" data-file="Google IT Support.pdf">
+          <div>
+            <div class="cert-name">Google IT Support</div>
+            <div class="cert-issuer">Google</div>
+          </div>
+          <div class="cert-badge">Verified ✓</div>
+        </div>
+
+<!--
         ★★★ ADD MORE CERTIFICATIONS BELOW ★★★
         Copy one .cert-item block and paste here.
         Add data-name="..." data-issuer="..." data-year="..." for the modal to work.
@@ -1322,7 +1426,7 @@
         </a>
 
         <!-- Resume / CV (Google Drive icon) -->
-        <a href="https://drive.google.com/file/d/16glBLhlI90SFWX9hAKSw2KGogxaW0vjt/view?usp=sharing" class="social-link" target="_blank" data-label="Resume">
+        <a href="https://drive.google.com/file/d/1dZKbUwxmLJaI__kko0VbXJ2RpXPdO7dQ/view?usp=sharing" class="social-link" target="_blank" data-label="Resume">
           <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
             <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm4 18H6V4h7v5h5v11zm-7-7H8v-2h3V9l4 4-4 4v-2z"/>
           </svg>
@@ -1357,49 +1461,37 @@
        Click any certification row to open this modal.
        You can upload a photo of your certificate here.
   ═══════════════════════════════════════════ -->
-  <div class="cert-modal-overlay" id="certModal">
+  <div class="cert-modal-overlay" id="certModal" role="dialog" aria-modal="true" aria-labelledby="certModalTitle">
     <div class="cert-modal-box">
-      <!-- Close button -->
-      <button class="cert-modal-close" id="certModalClose">✕</button>
+      <button class="cert-modal-close" id="certModalClose" aria-label="Close">✕</button>
 
-      <!-- Certificate image preview -->
-      <img src="" alt="Certificate" id="certModalImg" style="display:none;"/>
-
-      <!-- Placeholder shown before image upload -->
-      <div class="cert-modal-placeholder" id="certModalPlaceholder">
-        <svg viewBox="0 0 24 24"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>
-        <div>No certificate image uploaded yet</div>
-        <div style="font-size:10px;opacity:0.5;">Click "Upload Image" below to add your certificate photo</div>
+      <div class="cert-pdf-wrap" id="certPdfWrap">
+        <canvas id="certCanvas"></canvas>
+        <div class="cert-pdf-status" id="certStatus">Loading certificate…</div>
       </div>
 
-      <!-- Certificate title & issuer -->
       <div class="cert-modal-title" id="certModalTitle"></div>
       <div class="cert-modal-issuer" id="certModalIssuer"></div>
 
-      <!-- Action buttons -->
-      <div class="cert-modal-actions">
-        <!-- Upload button — lets you pick a local image file -->
-        <label class="cert-upload-label">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16h6v-6h4l-7-7-7 7h4zm-4 2h14v2H5z"/></svg>
-          Upload Image
-          <input type="file" class="cert-upload-input" id="certUploadInput" accept="image/*"/>
-        </label>
+      <div class="cert-modal-nav">
+        <button class="cert-nav-btn" id="certPrev" aria-label="Previous certificate">‹</button>
+        <span class="cert-nav-count" id="certCount"></span>
+        <button class="cert-nav-btn" id="certNext" aria-label="Next certificate">›</button>
+      </div>
 
-        <!-- View all in Drive -->
-        <a href="https://drive.google.com/drive/folders/1zO2gBZbcSG3juwTsMqmxjTivrBovEu2x?usp=sharing"
-           class="cert-upload-label" target="_blank" style="text-decoration:none;">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M19 19H5V5h7V3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/></svg>
-          View All Certs
-        </a>
+      <div class="cert-modal-actions">
+        <a class="cert-upload-label" id="certOpenPdf" href="#" target="_blank" rel="noopener" style="text-decoration:none;">Open PDF</a>
+        <a class="cert-upload-label" href="https://drive.google.com/drive/folders/1zO2gBZbcSG3juwTsMqmxjTivrBovEu2x?usp=sharing" target="_blank" rel="noopener" style="text-decoration:none;">View on Drive</a>
       </div>
     </div>
   </div>
 
 
+
   <!-- ============================================================
        JAVASCRIPT — All interactions and 3D animations
        ============================================================ -->
-  <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+  <script>
 
     /* ── 1. THREE.JS 3D PARTICLE BACKGROUND ── */
     const canvas = document.getElementById('three-canvas');
@@ -1452,23 +1544,6 @@
       renderer.setSize(window.innerWidth, window.innerHeight);
     });
 
-    /* ── 2. CUSTOM CURSOR ── */
-    const cursor = document.getElementById('cursor');
-    const trail = document.getElementById('cursor-trail');
-    let trailX = 0, trailY = 0;
-    document.addEventListener('mousemove', e => {
-      cursor.style.left = e.clientX + 'px';
-      cursor.style.top  = e.clientY + 'px';
-      trailX += (e.clientX - trailX) * 0.15;
-      trailY += (e.clientY - trailY) * 0.15;
-      trail.style.left = trailX + 'px';
-      trail.style.top  = trailY + 'px';
-    });
-    document.querySelectorAll('a, button, .skill-tag, .project-card').forEach(el => {
-      el.addEventListener('mouseenter', () => { cursor.style.width = '40px'; cursor.style.height = '40px'; });
-      el.addEventListener('mouseleave', () => { cursor.style.width = '20px'; cursor.style.height = '20px'; });
-    });
-
     /* ── 3. SCROLL REVEAL ── */
     const revealObserver = new IntersectionObserver(entries => {
       entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); revealObserver.unobserve(e.target); } });
@@ -1510,7 +1585,7 @@
 
     // Show hamburger only on mobile
     function checkHamburger() {
-      if (window.innerWidth <= 768) {
+      if (window.innerWidth <= 1100) {
         hamburger.style.display = 'flex';
       } else {
         hamburger.style.display = 'none';
@@ -1538,69 +1613,135 @@
       renderer.setPixelRatio(1);
     }
 
-    /* ── 9. CERTIFICATION IMAGE MODAL ── */
-    const certModal       = document.getElementById('certModal');
-    const certModalClose  = document.getElementById('certModalClose');
-    const certModalImg    = document.getElementById('certModalImg');
-    const certModalPH     = document.getElementById('certModalPlaceholder');
-    const certModalTitle  = document.getElementById('certModalTitle');
-    const certModalIssuer = document.getElementById('certModalIssuer');
-    const certUploadInput = document.getElementById('certUploadInput');
-    const certImages = {};
+    /* ── 9. HERO AUTO-CHANGING TEXT ── */
+    const rotatorEl = document.getElementById('rotator-text');
+    const rotatorPhrases = [
+      'Business Analyst – Growth', 'Data & Business Analyst', 'Product Analyst', 'Product Management',
+      'Product 0 → 1', 'Operations', 'Mechanical Engineer', 'Engineer',
+      'SQL · PostgreSQL · Metabase', 'Python', 'Automation Workflows', 'AI',
+      'Power BI · DAX · Excel', 'A/B Testing · CAC & Cohort Analysis'
+    ];
+    let rotatorIndex = 0;
+    setInterval(() => {
+      rotatorEl.classList.add('out');
+      setTimeout(() => {
+        rotatorIndex = (rotatorIndex + 1) % rotatorPhrases.length;
+        rotatorEl.textContent = rotatorPhrases[rotatorIndex];
+        rotatorEl.classList.remove('out');
+      }, 350);
+    }, 2800);
 
-    document.querySelectorAll('.cert-item').forEach(item => {
-      item.addEventListener('click', () => {
-        const name   = item.getAttribute('data-name');
-        const issuer = item.getAttribute('data-issuer');
-        const year   = item.getAttribute('data-year');
-        certModalTitle.textContent  = name;
-        certModalIssuer.textContent = issuer + ' · ' + year;
-        if (certImages[name]) {
-          certModalImg.src = certImages[name];
-          certModalImg.style.display = 'block';
-          certModalPH.style.display  = 'none';
-        } else {
-          certModalImg.style.display = 'none';
-          certModalPH.style.display  = 'flex';
-        }
-        certModal.dataset.activeCert = name;
-        certModal.classList.add('active');
-        document.body.style.overflow = 'hidden';
-      });
-    });
+    /* ── 10. CERTIFICATE POP-UP (renders the PDF inside the page) ── */
+    const certModal   = document.getElementById('certModal');
+    const certClose   = document.getElementById('certModalClose');
+    const certWrap    = document.getElementById('certPdfWrap');
+    const certCanvas  = document.getElementById('certCanvas');
+    const certStatus  = document.getElementById('certStatus');
+    const certTitle   = document.getElementById('certModalTitle');
+    const certIssuer  = document.getElementById('certModalIssuer');
+    const certCount   = document.getElementById('certCount');
+    const certOpenPdf = document.getElementById('certOpenPdf');
+    const certItems   = Array.from(document.querySelectorAll('.cert-item'));
+    let certIndex = -1, certToken = 0, certTrigger = null;
 
-    certModalClose.addEventListener('click', () => {
+    if (window.pdfjsLib) {
+      pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    }
+
+    function setCertStatus(msg) {
+      certStatus.textContent = msg;
+      certStatus.style.display = msg ? 'flex' : 'none';
+    }
+
+    async function renderCert(i) {
+      const token = ++certToken;
+      const item   = certItems[i];
+      const file   = item.getAttribute('data-file');
+      const year   = item.getAttribute('data-year');
+      const issuer = item.getAttribute('data-issuer');
+      certTitle.textContent  = item.getAttribute('data-name');
+      certIssuer.textContent = year ? issuer + ' · ' + year : issuer;
+      certCount.textContent  = (i + 1) + ' / ' + certItems.length;
+      certCanvas.style.display = 'none';
+
+      if (!file) { certOpenPdf.style.display = 'none'; setCertStatus('Preview not available yet'); return; }
+      const url = encodeURIComponent(file);
+      certOpenPdf.style.display = '';
+      certOpenPdf.href = url;
+
+      if (!window.pdfjsLib) { setCertStatus('Preview unavailable — use Open PDF'); return; }
+      setCertStatus('Loading certificate…');
+      try {
+        const pdf  = await pdfjsLib.getDocument({ url: url }).promise;
+        const page = await pdf.getPage(1);
+        if (token !== certToken) return;
+        const avail = Math.max(certWrap.clientWidth, 240);
+        const base  = page.getViewport({ scale: 1 });
+        const dpr   = Math.min(window.devicePixelRatio || 1, 2);
+        const vp    = page.getViewport({ scale: (avail / base.width) * dpr });
+        certCanvas.width  = Math.floor(vp.width);
+        certCanvas.height = Math.floor(vp.height);
+        await page.render({ canvasContext: certCanvas.getContext('2d'), viewport: vp }).promise;
+        if (token !== certToken) return;
+        certCanvas.style.display = 'block';
+        setCertStatus('');
+      } catch (err) {
+        if (token === certToken) setCertStatus('Preview unavailable — use Open PDF');
+      }
+    }
+
+    function openCert(i, trigger) {
+      certTrigger = trigger || certTrigger;
+      certIndex = i;
+      certModal.classList.add('active');
+      document.body.style.overflow = 'hidden';
+      renderCert(i);
+      certClose.focus();
+    }
+    function closeCert() {
       certModal.classList.remove('active');
       document.body.style.overflow = '';
-    });
+      certToken++;
+      if (certTrigger) certTrigger.focus({ preventScroll: true });
+    }
+    function stepCert(d) {
+      if (!certModal.classList.contains('active')) return;
+      certIndex = (certIndex + d + certItems.length) % certItems.length;
+      renderCert(certIndex);
+    }
 
-    certModal.addEventListener('click', (e) => {
-      if (e.target === certModal) {
-        certModal.classList.remove('active');
-        document.body.style.overflow = '';
-      }
+    certItems.forEach((item, i) => {
+      item.setAttribute('tabindex', '0');
+      item.setAttribute('role', 'button');
+      item.addEventListener('click', () => openCert(i, item));
+      item.addEventListener('keydown', e => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openCert(i, item); }
+      });
     });
-
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') {
-        certModal.classList.remove('active');
-        document.body.style.overflow = '';
-      }
+    certClose.addEventListener('click', closeCert);
+    certModal.addEventListener('click', e => { if (e.target === certModal) closeCert(); });
+    document.getElementById('certPrev').addEventListener('click', () => stepCert(-1));
+    document.getElementById('certNext').addEventListener('click', () => stepCert(1));
+    document.addEventListener('keydown', e => {
+      if (!certModal.classList.contains('active')) return;
+      if (e.key === 'Escape') closeCert();
+      if (e.key === 'ArrowLeft') stepCert(-1);
+      if (e.key === 'ArrowRight') stepCert(1);
     });
-
-    certUploadInput.addEventListener('change', (e) => {
-      const file = e.target.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = (ev) => {
-        const activeCert = certModal.dataset.activeCert;
-        certImages[activeCert] = ev.target.result;
-        certModalImg.src = ev.target.result;
-        certModalImg.style.display = 'block';
-        certModalPH.style.display  = 'none';
-      };
-      reader.readAsDataURL(file);
-      certUploadInput.value = '';
+    let swipeX = null;
+    certModal.addEventListener('touchstart', e => { swipeX = e.touches[0].clientX; }, { passive: true });
+    certModal.addEventListener('touchend', e => {
+      if (swipeX === null) return;
+      const dx = e.changedTouches[0].clientX - swipeX;
+      swipeX = null;
+      if (Math.abs(dx) > 70) stepCert(dx < 0 ? 1 : -1);
+    }, { passive: true });
+    let certResizeTimer;
+    window.addEventListener('resize', () => {
+      clearTimeout(certResizeTimer);
+      certResizeTimer = setTimeout(() => {
+        if (certModal.classList.contains('active')) renderCert(certIndex);
+      }, 250);
     });
 
   </script>
